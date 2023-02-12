@@ -1,9 +1,9 @@
 module Test.LambdaDC.Syntax where
 
-import LambdaDC.Syntax
-import Prettyprinter
-import Test.Tasty
-import Test.Tasty.HUnit
+import LambdaDC.Syntax (Expr (..), Value (Lam, Var))
+import Prettyprinter (Pretty (pretty))
+import Test.Tasty (TestTree, testGroup)
+import Test.Tasty.HUnit (testCase, (@?=))
 
 -- | x
 example1 :: Expr
