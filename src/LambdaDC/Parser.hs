@@ -5,9 +5,24 @@ module LambdaDC.Parser where
 import Control.Monad (guard)
 import Data.Text (Text)
 import Data.Void (Void)
-import LambdaDC.Syntax (Expr (App, NewPrompt, PushPrompt, PushSubCont, Val, WithSubCont), Value (Lam, Var))
-import Text.Megaparsec (MonadParsec (try), Parsec, between, choice, many, manyTill, parse, (<|>))
-import Text.Megaparsec.Char (alphaNumChar, char, lowerChar, space, string)
+import LambdaDC.Syntax (Expr (..), Value (Lam, Var))
+import Text.Megaparsec
+  ( MonadParsec (try),
+    Parsec,
+    between,
+    choice,
+    many,
+    oneOf,
+    some,
+    (<|>),
+  )
+import Text.Megaparsec.Char
+  ( alphaNumChar,
+    char,
+    lowerChar,
+    space,
+    string,
+  )
 
 type Parser = Parsec Void Text
 
@@ -20,15 +35,15 @@ pVar = do
   space
   return (c : cs)
 
-pValVar :: Parser Expr
-pValVar = Val . Var <$> pVar
+pExprVar :: Parser Expr
+pExprVar = Val . Var <$> pVar
 
 pToken :: Parser a -> Parser ()
 pToken p = p >> space
 
 pLambda :: Parser Expr
 pLambda = do
-  pToken $ char '\\' <|> char 'λ'
+  pToken $ oneOf ['\\', 'λ']
   x <- pVar
   pToken $ char '.'
   e <- pExpr
@@ -42,17 +57,17 @@ pNewPrompt = do
 pPushPrompt :: Parser Expr
 pPushPrompt = do
   pToken $ string "pushPrompt"
-  PushPrompt <$> pExpr <*> pExpr
+  PushPrompt <$> pTerm <*> pExpr
 
 pWithSubCont :: Parser Expr
 pWithSubCont = do
   pToken $ string "withSubCont"
-  WithSubCont <$> pExpr <*> pExpr
+  WithSubCont <$> pTerm <*> pExpr
 
 pPushSubCont :: Parser Expr
 pPushSubCont = do
   pToken $ string "pushSubCont"
-  PushSubCont <$> pExpr <*> pExpr
+  PushSubCont <$> pTerm <*> pExpr
 
 pParen :: Parser Expr
 pParen =
@@ -61,9 +76,10 @@ pParen =
     (pToken $ char ')')
     pExpr
 
-pExpr :: Parser Expr
-pExpr = choice [pLambda, pParen, pNewPrompt, pPushPrompt, pWithSubCont, pPushSubCont, pValVar]
+pTerm :: Parser Expr
+pTerm = choice $ map try [pNewPrompt, pPushPrompt, pWithSubCont, pPushSubCont, pLambda, pParen, pExprVar]
 
--- left recursion
-pApp :: Parser Expr
-pApp = App <$> pExpr <*> pExpr
+pExpr :: Parser Expr
+pExpr = do
+  (e : es) <- some pTerm
+  return $ foldl App e es
