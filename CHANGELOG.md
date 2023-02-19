@@ -10,7 +10,7 @@ and this project adheres to the
 
 ### Added
 
-- Added parser.
+- Added parser [#2](https://github.com/i321takeji/lambda-dc/pull/2).
 - Abstract syntax can be pretty-printed.
 - Added abstract syntax for lambda expressions and delimited continuation operators.
 
