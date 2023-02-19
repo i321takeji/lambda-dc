@@ -58,4 +58,6 @@ test-suite lambda-dc-test
   build-tool-depends: tasty-discover:tasty-discover ^>=4.2
 
   -- cabal-fmt: expand test  -Driver
-  other-modules:      Test.LambdaDC.Syntax
+  other-modules:
+    Test.LambdaDC.Parser
+    Test.LambdaDC.Syntax

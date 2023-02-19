@@ -1,18 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module LambdaDC.Parser where
+module LambdaDC.Parser (parseExpr) where
 
 import Control.Monad (guard)
 import Data.Text (Text)
 import Data.Void (Void)
 import LambdaDC.Syntax (Expr (..), Value (Lam, Var))
 import Text.Megaparsec
-  ( MonadParsec (try),
+  ( MonadParsec (eof, try),
     Parsec,
     between,
     choice,
     many,
     oneOf,
+    parse,
     some,
     (<|>),
   )
@@ -23,8 +24,12 @@ import Text.Megaparsec.Char
     space,
     string,
   )
+import Text.Megaparsec.Error (ParseErrorBundle)
 
 type Parser = Parsec Void Text
+
+parseExpr :: Text -> Either (ParseErrorBundle Text Void) Expr
+parseExpr = parse (between space eof pExpr) ""
 
 pVar :: Parser String
 pVar = do

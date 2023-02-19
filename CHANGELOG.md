@@ -8,4 +8,10 @@ and this project adheres to the
 
 ## Unreleased
 
+### Added
+
+- Added parser.
+- Abstract syntax can be pretty-printed.
+- Added abstract syntax for lambda expressions and delimited continuation operators.
+
 ## 0.1.0.0 - YYYY-MM-DD
