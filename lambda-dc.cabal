@@ -36,9 +36,14 @@ library
   import:          deps
   hs-source-dirs:  src
   build-depends:
+    , megaparsec  ^>=9.2
+    , text        ^>=1.2
+    , void        ^>=0.7
 
   -- cabal-fmt: expand src
-  exposed-modules: LambdaDC.Syntax
+  exposed-modules:
+    LambdaDC.Parser
+    LambdaDC.Syntax
 
 test-suite lambda-dc-test
   import:             deps
@@ -53,4 +58,6 @@ test-suite lambda-dc-test
   build-tool-depends: tasty-discover:tasty-discover ^>=4.2
 
   -- cabal-fmt: expand test  -Driver
-  other-modules:      Test.LambdaDC.Syntax
+  other-modules:
+    Test.LambdaDC.Parser
+    Test.LambdaDC.Syntax
