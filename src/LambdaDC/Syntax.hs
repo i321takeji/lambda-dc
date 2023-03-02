@@ -1,6 +1,15 @@
 -- |
 -- Abstract syntax
-module LambdaDC.Syntax (Value (..), Expr (..), DelimitedContext (..), SeqElem (..)) where
+module LambdaDC.Syntax
+  ( Value (..),
+    Expr (..),
+    DelimitedContext (..),
+    SeqElem (..),
+    Name,
+    Prompt,
+    Sequences,
+  )
+where
 
 import Prettyprinter (Doc, Pretty (..), brackets, parens, (<+>))
 
