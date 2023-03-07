@@ -28,9 +28,11 @@ source-repository head
 common deps
   build-depends:
     , base           >=4.7  && <5
+    , containers     ^>=0.6
     , prettyprinter  ^>=1.7
 
-  default-language: Haskell2010
+  default-language:   Haskell2010
+  default-extensions: ImportQualifiedPost
 
 library
   import:          deps
@@ -42,6 +44,7 @@ library
 
   -- cabal-fmt: expand src
   exposed-modules:
+    LambdaDC.Evaluator
     LambdaDC.Parser
     LambdaDC.Syntax
 
@@ -59,5 +62,6 @@ test-suite lambda-dc-test
 
   -- cabal-fmt: expand test  -Driver
   other-modules:
+    Test.LambdaDC.Evaluator
     Test.LambdaDC.Parser
     Test.LambdaDC.Syntax
