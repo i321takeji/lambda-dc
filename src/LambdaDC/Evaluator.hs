@@ -2,18 +2,54 @@
 -- Evaluator
 module LambdaDC.Evaluator where
 
+import Data.Set (Set)
+import Data.Set qualified as Set
 import LambdaDC.Syntax
   ( DelimitedContext (..),
     Expr (..),
     Name,
     Prompt,
-    SeqElem (EDC, EPN),
+    SeqElem (..),
     Sequences,
-    Value (Lam, PN, Seq),
+    Value (..),
   )
+import Prettyprinter (Pretty (pretty), lbracket, rbracket, slash, (<+>), (<>))
 
+freevars :: Expr -> Set Name
+freevars (Val (Var x)) = Set.singleton x
+freevars (Val (Lam x e)) = Set.filter (/= x) (freevars e)
+freevars (App e1 e2) = Set.union (freevars e1) (freevars e2)
+freevars (PushPrompt e1 e2) = Set.union (freevars e1) (freevars e2)
+freevars (WithSubCont e1 e2) = Set.union (freevars e1) (freevars e2)
+freevars (PushSubCont e1 e2) = Set.union (freevars e1) (freevars e2)
+freevars _ = Set.empty
+
+-- freevars' (Val (Seq sqs)) = Set.map freevars' sqs
+
+-- | e[v/x]            ==> subst e v x
+--  - x[v/x]           ==> v
+--  - x[v/y]           ==> x
+--  - (\x.x)[v/x]      ==> \x.x
+--  - (\x.\y.z)[v/y]   ==> (\x.\y.z)
+--  - (\x.y)[(\z.z)/y] ==> (\x.(\z.z))
+--  - (\x.y)[(\z.x)/y] ==> (\x1.y)[(\z.x)/y] ,alpha conversion (\x.y)
 subst :: Expr -> Expr -> Name -> Expr
-subst = undefined
+subst e@(Val (Var x)) e' y
+  | x == y = e'
+  | otherwise = e
+subst lam@(Val (Lam x e)) e' y
+  | x == y = lam
+  | y `notElem` freevars e = lam
+  | y `elem` freevars e && x `notElem` freevars e' = Val $ Lam x (subst e e' y)
+  | y `elem` freevars e && x `elem` freevars e' =
+      error $ show $ pretty "Postpone implements:" <+> pretty lam <+> lbracket <> pretty e' <+> slash <+> pretty y <> rbracket -- alpha conversion for (Lam x e)
+subst (App e1 e2) e' y = App (subst e1 e' y) (subst e2 e' y)
+subst (PushPrompt e1 e2) e' y = PushPrompt (subst e1 e' y) (subst e2 e' y)
+subst (WithSubCont e1 e2) e' y = WithSubCont (subst e1 e' y) (subst e2 e' y)
+subst (PushSubCont e1 e2) e' y = PushSubCont (subst e1 e' y) (subst e2 e' y)
+subst e _ _ = e
+
+-- subst (Val (Seq sqs)) e' y = Val $ Seq $ map (\s -> substSeqElem s e' y) sqs
 
 isValue :: Expr -> Bool
 isValue (Val _) = True
@@ -31,23 +67,13 @@ substHole (DWithSubContP p d) dc = DWithSubContP p (substHole d dc)
 delimitedContextToExpr :: DelimitedContext -> Expr -> Expr
 delimitedContextToExpr = undefined
 
-evalValue ::
-  Value ->
-  DelimitedContext ->
-  Sequences ->
-  Prompt ->
-  Maybe (Expr, DelimitedContext, Sequences, Prompt)
+evalValue :: Value -> DelimitedContext -> Sequences -> Prompt -> Maybe (Expr, DelimitedContext, Sequences, Prompt)
 evalValue v DHole [] q = Nothing
 evalValue v DHole ((EPN p) : sqs) q = return (Val v, DHole, sqs, q)
 evalValue v DHole ((EDC dc) : sqs) q = return (Val v, dc, sqs, q)
 evalValue v ctx sqs q = return (delimitedContextToExpr ctx (Val v), DHole, sqs, q)
 
-evalExpr ::
-  Expr ->
-  DelimitedContext ->
-  Sequences ->
-  Prompt ->
-  Maybe (Expr, DelimitedContext, Sequences, Prompt)
+evalExpr :: Expr -> DelimitedContext -> Sequences -> Prompt -> Maybe (Expr, DelimitedContext, Sequences, Prompt)
 evalExpr (Val v) ctx sqs q =
   evalValue v ctx sqs q
 evalExpr (App (Val (Lam x e)) v@(Val _)) ctx sqs q =
